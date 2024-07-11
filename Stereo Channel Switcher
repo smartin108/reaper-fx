@@ -1,0 +1,33 @@
+desc:Toggle stereo width +/-100% (smartin)
+//tags: stereo width
+//author: smartin
+
+slider1:1<0,1,1{NORM,SWITCH}>ST.W
+
+in_pin:left input
+in_pin:right input
+out_pin:left output
+out_pin:right output
+
+@init
+
+@slider
+switch = slider1;
+
+@block
+trigger & (2^0) ? (
+  slider1=0;
+) : trigger & (2^1) ? (
+  slider1=1;
+);
+
+@sample
+switch==0?(
+  do_nothing=1;
+) : (
+  temp0=spl0;
+  temp1=spl1;
+  spl0=temp1;
+  spl1=temp0;
+)  
+  

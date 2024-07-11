@@ -1,0 +1,50 @@
+desc:Used with Jukebox, can randomly shuffle between programs
+
+slider1:gain_db=0<-150,12,1>gain (dB)
+
+slider2:interval=240<10,600,10>average shuffle interval (s)
+slider3:mood_s=2<0,4,1{slow,chill,normal,hyper,frenetic}>hype level?
+slider4:delta=0.2<0,1,0.001>P(delta)
+
+
+in_pin:left input
+in_pin:right input
+out_pin:through
+out_pin:through
+
+@init
+mood_exp = 2-mood_s;
+mood = 2^mood_exp;
+mu = interval;
+rand(x)>0.2 ? (
+  delta = 0
+  ) ? (
+  delta = 1
+  );
+
+
+//rand(x) -- returns a psuedorandom number between 0 and the parameter.
+
+
+@slider
+mood_exp = 2-mood_s;
+mood = 2^mood_exp;
+
+
+@block
+d_gain = (next_gain - last_gain)/samplesblock;
+
+@sample
+spl0 *= last_gain;
+spl1 *= last_gain;
+last_gain += d_gain;
+
+
+
+/*
+time([v]) -- REAPER 4.60+
+Returns the current time as seconds since January 1, 1970. 1 second granularity. If a parameter is specified, it will be set to the timestamp.
+
+time_precise([v]) -- REAPER 4.60+
+Returns a system-specific timestamp in seconds. Granularity is system-defined, but generally much less than 1 millisecond. Useful for benchmarking. If a parameter is specified, it will be set to the timestamp.
+*/

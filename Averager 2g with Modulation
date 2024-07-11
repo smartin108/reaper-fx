@@ -1,0 +1,69 @@
+desc:Create RMS Average With Time Control (smartin)
+//tags: average rms smooth modulation
+//author: smartin
+//modified: 2024-03-24
+/*
+
+Creates a rectified RMS signal and then modulates it
+
+*/
+
+slider1:window_ms=10<1,50,1>window (ms)
+slider2:gain_db=0<-150,12,1>gain (dB)
+slider3:w_mod=1<0.1,10000,0.01:log!>Modulation frequency (Hz)
+slider4:a_mod=0<-18,12,1>Modulation gain (dB)
+
+
+in_pin:source input
+in_pin:source input
+out_pin:fx output
+out_pin:fx output
+
+@init
+buf_size = srate * 2 * 50 / 1000;
+mem_ptr = 0;
+enable = 0;
+window_spl = srate * window_ms / 1000;
+gain_out = 10^(gain_db/20);
+t = 0;
+tau = 2 * 3.141592653589793;
+tau10000 = tau * 10000;
+freembuf(buf_size); // twice the allowed window size
+
+@slider
+window_spl = srate * window_ms / 1000;
+gain_out = 10^(gain_db/20);
+
+ 
+@block
+
+@sample
+(mem_ptr * 2)[0] = sqr(spl0) / window_spl;
+(mem_ptr * 2)[1] = sqr(spl1) / window_spl;
+enable = 1 ? (
+  i = window_spl - 1;
+  lsum = 0;
+  rsum = 0;
+  while(
+    mem_off = mem_ptr - i;
+    lsum += ((mem_off < 0 ? 1 : 0) * buf_size + mem_off * 2)[0];
+    rsum += ((mem_off < 0 ? 1 : 0) * buf_size + mem_off * 2)[1];
+    i -= 1;
+    i >= 0;
+    );
+  lspl = sqrt(lsum);
+  rspl = sqrt(rsum)
+  );
+
+mem_ptr += 1;
+mem_ptr >= window_spl ? enable = 1;      // enable is latched permanently
+mem_ptr >= buf_size ? mem_ptr = 0;
+
+omega_t = tau * w_mod * t / srate;
+modulation = 10^(a_mod/20) * sin(omega_t);
+
+spl0 = lspl * gain_out * modulation;
+spl1 = rspl * gain_out * modulation;
+
+t += 1;
+omega_t > tau10000 ? t = 0;

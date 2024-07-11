@@ -1,0 +1,70 @@
+desc:reverse-o-matic v1.1 (smartin)
+// tags: reverse
+// author: smartin
+// revised: 2023-07-23, 2023-09-22
+// Plays back <reverse length> sections of the source in reverse
+
+slider1:500<1,4000,1>Reverse length (ms)
+slider2:0<-120,12,1>Wet Mix (dB)
+slider3:-120<-120,12,1>Dry Mix (dB)
+slider9:1<0,1,1{Off,On}>Smooth endpoints
+slider10:30<0,3000,1>Samples to smooth
+slider11:2<0,5,0.01>Slider exponent
+
+in_pin:left input
+in_pin:right input
+out_pin:left output
+out_pin:right output
+
+@init
+pointer = 0;
+
+@slider
+old_length = half_buf;
+slider1 < 1 ? slider1 = 1;
+half_buf = slider1 * srate / 1000;
+pointer >= old_length ? pointer = 0;
+freembuf(half_buf * 2);
+
+wet = 2^(slider2/6);
+dry = 2^(slider3/6);
+
+smooth_endpoints = slider9;
+smooth_samples = slider10;   // volume smoothing within this many samples of an edge
+//smooth_ratio = smooth_samples / 10^slider11;
+ smooth_ratio = smooth_samples / 10^slider11;
+
+@block
+
+@sample
+// save the current sample
+(pointer * 2)[0] = spl0;
+(pointer * 2)[1] = spl1;
+dry0 = spl0;
+dry1 = spl1;
+
+// retrieve the sample to play
+s0 = (2 * (half_buf - pointer))[0];
+s1 = (2 * (half_buf - pointer))[1];
+
+// smooth endpoints
+smooth_endpoints ? (
+  r1 = pointer;                        // near the beginning of the buffer
+  r2 = half_buf - pointer;             // near the end of the buffer
+//  r1 = pointer % half_buf;                        // near the beginning of the buffer
+//  r2 = (pointer + smooth_samples) % half_buf;     // near the end of the buffer
+  r = min(r1,r2);
+  r <= smooth_samples ? (
+    gain_adj = (1 - exp(-r*smooth_ratio))/(1 - exp(-(slider10^2)/(10^slider11)));
+    //gain_adj = 1 - exp(-r*smooth_ratio);
+    s0 = s0 * gain_adj;
+    s1 = s1 * gain_adj;
+    );
+);
+
+// output
+spl0 = s0*wet + dry0*dry;
+spl1 = s1*wet + dry1*dry;
+
+// move the pointer for next sample
+(pointer += 1) >= half_buf ? pointer = 0;

@@ -1,0 +1,135 @@
+desc:Averager v.03
+
+// v.01 first attempt at a trailing average based on number of samples
+// v.02 convert to time (instead of #samples) context and add wet/dry mixers
+// v.03 let's try to add intelligent(?) smoothing. First: calculate the coefficient of regression.
+
+slider1:200<1,10000,1>Window size (us)
+slider2:-120<-120,6,0.1>Dry mix (dB)
+slider3:-0<-120,6,0.1>Wet mix (dB)
+
+// read-only
+slider10:1<1,500,1>Number of samples 
+
+@init
+index=0;
+
+@slider
+num_samples = (slider1/1000000*srate)|1;
+num_samples < 1 ? num_samples=1;
+slider10=num_samples;
+dry_mix = 2^(slider2/6);
+wet_mix = 2^(slider3/6);
+old0=0;
+old1=500;
+
+// v.03: the number of samples in the window governs all of the x-values in the 
+// regression. Calculate them when the slider is adjusted.
+
+x=1000;
+x_minus_xbar    =x+num_samples*1;
+x_minus_xbar_sq =x+num_samples*2;
+xbar=((num_samples-1)/2)/srate;
+sum_x_minus_xbar_sq=0;
+
+n=0;
+loop (num_samples,
+  x[n]=n/srate;
+  x_minus_xbar[n]=x[n]-xbar;
+  x_minus_xbar_sq[n]  =(x_minus_xbar[n])^2;
+  sum_x_minus_xbar_sq+=x_minus_xbar_sq[n];
+  n+=1;
+);
+
+
+@sample
+
+old0[index]=spl0; 
+old1[index]=spl1;
+ 
+// v.03: now we need to figure out the y, y-bar, and regression values--twice
+// (once for each channel)
+
+// prepare address spaces for vectors
+y0=x+num_samples*3;
+y0_minus_ybar0=y0+num_samples*1;
+y0_minus_ybar0_sq=y0+num_samples*2;
+sum_y0_minus_ybar0_sq=0;
+
+y1=y0+num_samples*3;
+y1_minus_ybar1=y0+num_samples*4;
+y1_minus_ybar1_sq=y0+num_samples*5;
+sum_y1_minus_ybar1_sq=0;
+
+// fill the yi[n] values
+
+countery0=index;
+n=0;
+ybar0=0;
+ybar1=0;
+// calculate ybarN
+// in the loop below, counter points to the stored samples, and n reindexes 
+// them from 0->num_samples
+loop (num_samples,
+  y0[n]=old0[countery0];
+  ybar0+=y0[n];
+  
+  y1[n]=old1[countery0];
+  ybar1+=y1[n];
+  
+  (countery0-=1);
+  (countery0 < 0) ? countery0 = num_samples-1;
+  n+=1;
+);
+ybar0/=num_samples;
+ybar1/=num_samples;
+
+
+//calculate y-ybar, (y-ybar)^2, and sum of squares
+n=0;
+loop (num_samples,
+  y0_minus_ybar0[n]=y0[n]-ybar0;
+  y0_minus_ybar0_sq[n]=(y0_minus_ybar0[n])^2;
+  sum_y0_minus_ybar0_sq+=y0_minus_ybar0_sq[n];
+
+  y1_minus_ybar1[n]=y1[n]-ybar1;
+  y1_minus_ybar1_sq[n]=(y1_minus_ybar1[n])^2;
+  sum_y1_minus_ybar1_sq+=y1_minus_ybar1_sq[n];
+  
+  n+=1
+);
+
+// calculate rsquared
+numerator0=0;
+numerator1=0;
+n=0;
+loop (num_samples,
+  numerator0+=x_minus_xbar[n]*y0_minus_ybar0[n];
+  numerator1+=x_minus_xbar[n]*y1_minus_ybar1[n];
+  n+=1;
+);
+
+rsq0=(numerator0^2)/(sum_x_minus_xbar_sq*sum_y0_minus_ybar0_sq);
+rsq1=(numerator1^2)/(sum_x_minus_xbar_sq*sum_y1_minus_ybar1_sq);
+
+
+count=0;
+wet0=0;
+wet1=0;
+while (count < num_samples) (
+  wet0+=old0[count];
+  wet1+=old1[count];
+  count+=1;
+);
+wet0/=num_samples;
+wet1/=num_samples;
+
+(index+=1) >= num_samples ? index = 0;
+
+pre0=spl0*dry_mix + wet0*wet_mix;
+pre1=spl1*dry_mix + wet1*wet_mix;
+
+spl0=min(max(pre0,-4),4);
+spl1=min(max(pre1,-4),4);
+
+

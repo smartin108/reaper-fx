@@ -1,0 +1,21 @@
+desc:AB Switch and Zero Tester
+
+slider1:0<0,1,1{AB Test,Zero Test}>Test Type
+slider2:0<0,1,2>Input Program
+
+@init
+
+@slider
+pair=slider2;
+zero=slider1;
+
+@sample
+zero==0 ? (
+  out0= (pair==0) ? spl0 : (pair==1) ? spl2 : (pair==2) ? spl4;
+  out1= (pair==0) ? spl1 : (pair==1) ? spl3 : (pair==2) ? spl5;
+) : (
+  out0= spl0 - spl2 ;
+  out1= spl1 - spl3 ;
+);
+spl0=out0;
+spl1=out1;

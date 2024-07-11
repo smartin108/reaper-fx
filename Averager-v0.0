@@ -1,0 +1,44 @@
+desc:Averager v.01
+
+// v.01 first attempt ata trailing average based on number of samples
+
+slider1:10<1,100,1># Samples to Average
+
+@init
+bpos=0;
+index=0;
+
+@slider
+num_samples = slider1;
+
+@sample
+//dbuf=num_samples*2;
+oldl[index]=spl0;
+oldr[index]=spl1;
+
+//dbuf[0]=spl0;
+//dbuf[1]=spl1;
+
+count=0;
+//left=0;
+//right=0;
+wet[0]=0;
+wet[1]=0;
+while (count < num_samples) (
+//  left+=oldl[count];
+//  right+=oldr[count];
+  wet[0]+=oldl[count];
+  wet[1]+=oldr[count];
+  count+=1;
+);
+//wet[0]=left/num_samples;
+//wet[1]=right/num_samples;
+wet[0]/=num_samples;
+wet[1]/=num_samples;
+
+(index+=1) >= num_samples ? index = 0;
+
+spl0=wet[0];
+spl1=wet[1];
+
+

@@ -1,0 +1,48 @@
+desc:Averager v.02
+
+// v.01 first attempt at a trailing average based on number of samples
+// v.02 convert to time (instead of #samples) context and add wet/dry mixers
+
+slider1:200<1,10000,1>Window size (us)
+slider2:-120<-120,6,0.1>Dry mix (dB)
+slider3:-0<-120,6,0.1>Wet mix (dB)
+
+// read-only
+slider10:1<1,500,1>Number of samples 
+
+@init
+index=0;
+
+@slider
+num_samples = (slider1/1000000*srate)|1;
+num_samples < 1 ? num_samples=1;
+slider10=num_samples;
+dry_mix = 2^(slider2/6);
+wet_mix = 2^(slider3/6);
+old0=0;
+old1=500;
+
+@sample
+old0[index]=spl0; 
+old1[index]=spl1;
+ 
+count=0;
+wet0=0;
+wet1=0;
+while (count < num_samples) (
+  wet0+=old0[count];
+  wet1+=old1[count];
+  count+=1;
+);
+wet0/=num_samples;
+wet1/=num_samples;
+
+(index+=1) >= num_samples ? index = 0;
+
+pre0=spl0*dry_mix + wet0*wet_mix;
+pre1=spl1*dry_mix + wet1*wet_mix;
+
+spl0=min(max(pre0,-4),4);
+spl1=min(max(pre1,-4),4);
+
+

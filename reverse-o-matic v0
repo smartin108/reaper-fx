@@ -1,0 +1,75 @@
+desc:reverse-o-matic v0 (smartin)
+// tags: reverse
+// author: smartin
+// revised: 2023-70-23
+// Plays back <reverse length> sections of the source in reverse
+// to do: smooth endpoints of the playback frames
+
+slider1:500<0.1,4000,20>Reverse length (ms)
+
+in_pin:left input
+in_pin:right input
+out_pin:left output
+out_pin:right output
+
+@init
+
+@slider
+!slider1 ? slider1 = 0.1;
+buffer_length = slider1 * srate / 1000;
+prebuffering = 1;
+playback_pointer = 0;
+frame = 0;
+buffer_pointer = buffer_length * (frame + 1) - 1;
+freembuf(buffer_length * 4);
+
+@block
+
+@sample
+prebuffering ? (
+  // buffering for the first time
+  ch0[buffer_pointer] = spl0;
+  ch1[buffer_pointer + 4 * buffer_length] = spl1;
+  spl0 = 0;
+  spl1 = 0;
+  buffer_pointer -= 1;
+  buffer_pointer <= 0 ? (
+    prebuffering = 0;
+    frame = 1;
+    buffer_pointer = buffer_length * (frame + 1) - 1;
+  )
+);
+
+!prebuffering ? (
+  // keep on buffering
+  ch0[buffer_pointer] = spl0;
+  ch1[buffer_pointer + 4 * buffer_length] = spl1;
+  buffer_pointer -= 1;
+  buffer_pointer <= 0 ? (
+    frame ? frame = 0 : frame = 1;
+    buffer_pointer = buffer_length * (frame + 1) - 1;
+    );
+    
+  // playback  
+  spl0 = ch0[playback_pointer];
+  spl1 = ch1[playback_pointer + 4 * buffer_length];
+
+
+  // smooth endpoints
+  // applies an exponential volume envelope to samples near the endpoints
+  r1 = playback_pointer % buffer_length; // near the beginning of the buffer
+  r2 = (2 * buffer_length - 1 - playback_pointer) % buffer_length; // near the end of the buffer
+  r = min(r1,r2);
+  r <= 30 ? (
+    gain_adj = 1 - exp(-r/10);
+    spl0 = spl0 * gain_adj;
+    spl1 = spl1 * gain_adj;
+    );
+
+  // move the playback pointer for next sample
+//  playback_pointer += 1; 
+//  playback_pointer >= 2 * buffer_length ? (
+//    playback_pointer = 0;
+//    );
+  (playback_pointer += 1) >= 2 * buffer_length ? playback_pointer = 0;
+); 

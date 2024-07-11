@@ -1,0 +1,75 @@
+desc:Create RMS Average With Time Control (smartin)
+//tags: average rms smooth
+//author: smartin
+//modified: 2024-03-23
+/*
+
+Use this if you need a smoothed audio signal for lower reactance in downstream controls.
+
+This is intended to be a side-chain driver, not a listening effect.
+
+*/
+
+slider1:window_ms=10<1,50,1>window (ms)
+slider2:gain_db=0<-150,12,1>gain (dB)
+slider3:primary_out=0<0,1,1{no,yes}>-primary output
+
+
+in_pin: -
+in_pin: -
+in_pin:source input
+in_pin:source input
+out_pin: -
+out_pin: -
+out_pin:fx output
+out_pin:fx output
+
+@init
+buf_size = srate * 2 * 50 / 1000;
+freembuf(buf_size); // twice the allowed window size
+mem_ptr = 0;
+enable = 0;
+window_spl = srate * window_ms / 1000;
+gain_out = 10^(gain_db/20);
+
+@slider
+window_spl = srate * window_ms / 1000;
+gain_out = 10^(gain_db/20);
+ 
+@block
+
+@sample
+(mem_ptr * 2)[0] = sqr(spl2) / window_spl;
+(mem_ptr * 2)[1] = sqr(spl3) / window_spl;
+(mem_ptr >= window_spl) ? enable = 1;      // enable is latched permanently
+enable = 1 ? (
+  i = window_spl - 1;
+  lsum = 0;
+  rsum = 0;
+  while(
+    mem_off = mem_ptr - i;
+    mem_off >= 0 ? (
+      // use (mem_off * 2)[0,1]
+      lsum += (mem_off * 2)[0];
+      rsum += (mem_off * 2)[1];
+      ) : (
+      // mem_off is negative
+      // use (buf_size + 2*mem_off)[0,1]
+      lsum += (buf_size + mem_off * 2)[0];
+      rsum += (buf_size + mem_off * 2)[1];
+      );
+    i -= 1;
+    i >= 0;
+  );
+  lspl = sqrt(lsum);
+  rspl = sqrt(rsum);
+);
+
+mem_ptr += 1;
+mem_ptr >= window_spl ? mem_ptr = 0;
+
+spl2 = enable * lspl * gain_out;
+spl3 = enable * rspl * gain_out;
+
+spl0 = spl2 * primary_out;
+spl1 = spl3 * primary_out;

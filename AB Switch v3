@@ -1,0 +1,96 @@
+desc:AB Switch v2 (smartin)
+//tags: AB program comparison diff sum 
+//author: smartin
+//modified: 2023-06-03
+//          2023-06-16 : Made it an ABC switch, with A-B and A-C
+/*
+
+Quickly switch between stereo program comparisons. You can 
+use numkeys 0-3 to switch the mode.
+
+  Mode                  Trigger
+  *******************   *******
+  Program A only          0
+  Program B only          1
+  Program C only          2
+  Diff A-B (zero test)    3
+  Diff A-C (zero test)    4
+  Diff B-C (zero test)    5
+  
+Input:
+  Program A L/R on Channels 1-2
+  Program B L/R on Channels 3-4
+  Program C L/R on Channels 5-6
+Output:
+  L/R on channels 1-2 only
+  Channels 3-6 are zereoed after mixing
+
+NOTE: If you are using effects built for 2 channels (which you probably are)
+this needs to be the first effect in the chain. Channels 3-6 are zereoed
+after mixing.
+
+*/
+
+slider1:0<0,5,1{A (0),B (1),C (2),A-B (3),A-C (4),B-C (5)}>Program
+
+in_pin:Program A (L)
+in_pin:Program B (L)
+in_pin:Program C (L)
+in_pin:Program A (R)
+in_pin:Program B (R)
+in_pin:Program C (R)
+out_pin:Mix (L)
+out_pin:Mix (R)
+
+@init
+
+@slider
+  
+@block
+trigger & (2^0) ? (
+  slider1=0;
+) : trigger & (2^1) ? (
+  slider1=1;
+) : trigger & (2^2) ? (
+  slider1=2;
+) : trigger & (2^3) ? (
+  slider1=3;
+) : trigger & (2^4) ? (
+  slider1=4;
+) : trigger & (2^5) ? (
+  slider1=5;
+);
+
+@sample
+slider1==0 ? (
+  // Program A (channels 1-2)
+  out0=spl0;
+  out1=spl1;
+) : slider1==1 ? (
+  // Program B (channels 3-4)
+  out0=spl2;
+  out1=spl3;
+) : slider1==2 ? (
+  // Program C (channels 5-6)
+  out0=spl4;
+  out1=spl5;
+) : slider1==3 ? (
+  // Diff (A-B)
+  out0=spl0-spl2;
+  out1=spl1-spl3;
+) : slider1==4 ? (
+  // Diff (A-C)
+  out0=spl0-spl4;
+  out1=spl1-spl5;
+) : slider1==5 ? (
+  // Diff (A-C)
+  out0=spl2-spl4;
+  out1=spl3-spl5;
+);
+
+spl0=out0;
+spl1=out1;
+spl2=0;
+spl3=0;
+spl4=0;
+spl5=0;

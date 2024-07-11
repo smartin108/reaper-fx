@@ -1,0 +1,80 @@
+desc:Multiprogram Switch (smartin)
+//tags: JBMON
+//author: smartin
+/*
+Quickly switch between stereo programs
+
+Don't get confused here!
+out[x] and spl[y] both have 0-based indexes
+channel[z] has a 1-based index
+ 
+Input:
+  [key] Description
+  [0]   Program A L/R on Channels 3-4
+  [1]   Program B L/R on Channels 5-6
+  [2]   Program C L/R on Channels 7-8
+  ...
+Output:
+  Program out L/R on Channels 1-2
+  other channels are unhandled
+
+*/
+
+slider1:0<0,16,1{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P>Program
+
+in_pin:RESERVED
+in_pin:RESERVED
+in_pin:Program A (L)
+in_pin:Program A (R)
+in_pin:Program B (L)
+in_pin:Program B (R)
+in_pin:Program C (L)
+in_pin:Program C (R)
+in_pin:Program D (L)
+in_pin:Program D (R)
+in_pin:Program E (L)
+in_pin:Program E (R)
+in_pin:Program F (L)
+in_pin:Program F (R)
+in_pin:Program G (L)
+in_pin:Program G (R)
+in_pin:Program H (L)
+in_pin:Program H (R)
+in_pin:Program I (L)
+in_pin:Program I (R)
+in_pin:Program J (L)
+in_pin:Program J (R)
+in_pin:Program K (L)
+in_pin:Program K (R)
+in_pin:Program L (L)
+in_pin:Program L (R)
+in_pin:Program M (L)
+in_pin:Program M (R)
+in_pin:Program N (L)
+in_pin:Program N (R)
+in_pin:Program O (L)
+in_pin:Program O (R)
+in_pin:Program P (L)
+in_pin:Program P (R)
+out_pin:Mix (L)
+out_pin:Mix (R)
+
+@init
+
+@slider
+  
+@block
+
+@sample
+// Don't get confused here!
+// out[x] and spl[y] both have 0-based indexes
+// channel[z] has a 1-based index
+
+channel_offset = slider1*2 + 2;
+out0 = spl(slider1*2 + 2);
+out1 = spl(slider1*2 + 2 + 1); 
+
+
+spl0=out0;
+spl1=out1;
+

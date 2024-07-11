@@ -1,0 +1,23 @@
+desc: Depip
+
+// Andy Holaday 2019 11 23
+
+slider1:-30<-120,0,1>Threshold (dB)
+slider2:0.1<0,10,0.01>Detection window (ms)
+slider3:1<0,10,1>Smoothing
+
+in_pin:left input
+in_pin:right input
+out_pin:left output
+out_pin:right output
+
+
+@init
+
+@slider
+treshDB = slider1;
+smoothing = slider2;
+
+@block 
+window_size = samplesblock/srate
+ 

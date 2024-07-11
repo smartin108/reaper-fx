@@ -1,0 +1,42 @@
+desc:Mid/side levels (smartin)
+
+slider11:mid_gain=0<-18,12,1>mid gain (dB)
+slider12:mid_cut=0<0,1,1{no,yes}>mid cut?
+slider21:side_gain=0<-60,12,1>side gain (dB)
+slider22:side_cut=0<0,1,1{no,yes}>side cut?
+slider31:makeup_gain=0<-60,12,1>makeup gain (dB)
+options:no_meter
+
+in_pin:left_in
+in_pin:right_in
+out_pin:left_out
+out_pin:right_out
+
+@init
+function DB2X(db)
+(
+  result = 10^(db/20);
+  // alternatively: result = 2^(db/6)
+);
+
+//last_makeup_gain=10^(gain_db/20);
+//last_makeup_gain=DB2X(gain_db);
+
+@slider
+//next_makeup_gain=10^(gain_db/20);
+//next_makeup_gain=DB2X(gain_db);
+
+@block
+//d_gain = (next_makeup_gain - last_makeup_gain)/samplesblock;
+
+@sample
+mid  = (spl0 + spl1) * DB2X(mid_gain)  * (1 - mid_cut);
+side = (spl0 - spl1) * DB2X(side_gain) * (1 - side_cut);
+
+left  = (mid + side) * 0.5;
+right = (mid - side) * 0.5;
+
+spl0 = left  * DB2X(makeup_gain);
+spl1 = right * DB2X(makeup_gain);
+
+

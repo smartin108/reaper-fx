@@ -1,0 +1,23 @@
+desc:Place between M/S Decoder and Encode for original mono sources?
+
+slider1:side_gain_db=0<-150,12,1>side gain (dB)
+
+in_pin:left input
+in_pin:right input
+out_pin:left output
+out_pin:right output
+
+@init
+last_gain=10^(gain_db/20);
+
+@slider
+next_gain=10^(gain_db/20);
+
+@block
+d_gain = (next_gain - last_gain)/samplesblock;
+
+@sample
+spl0 *= last_gain;
+spl1 *= 0; /* hehe so clever */
+last_gain += d_gain;
+

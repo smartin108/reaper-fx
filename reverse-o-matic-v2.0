@@ -1,0 +1,72 @@
+desc:reverse-o-matic-v2.0 (smartin)
+tags:delay reverse
+// author: smartin
+// revised: 2023-07-23, 2023-09-22, 2024-07-10
+// Plays back <reverse length> sections of the source in reverse
+
+slider1:rdelay=500<1,4000,1>Reverse delay (ms)
+slider2:smoothie=1<0,1,1{Off,On}>Smooth endpoints
+slider3:smoothsam=10<0,50,0.1>% of samples to smooth
+slider4:smoothexp=2<0,10,0.01>Slider exponent
+// separator?
+slider11:stealth=0<0,1,1>-hidden
+slider12:wetmix=0<-120,12,1>Wet mix (dB)
+slider13:drymix=-120<-120,12,1>Dry mix (dB)
+slider14:ugain=0<-6,6,0.1>Trim (dB)
+
+in_pin:left input
+in_pin:right input
+out_pin:left output
+out_pin:right output
+
+@init
+pointer = 0;
+
+@slider
+old_length = half_buf;
+rdelay < 1 ? rdelay = 1;
+half_buf = rdelay * srate / 1000;
+pointer >= old_length ? pointer = 0;
+freembuf(half_buf * 2);
+
+wet = 2^(wetmix/6);
+dry = 2^(drymix/6);
+gain = 2^(ugain/6);
+
+smooth_endpoints = smoothie;
+smooth_samples = smoothsam/100 * half_buf * 2;   // volume smoothing within this many samples of an edge
+// smooth_samples = slider10;   // volume smoothing within this many samples of an edge
+smooth_ratio = smooth_samples / 10^smoothexp;
+
+@block
+
+@sample
+// save the current sample
+(pointer * 2)[0] = spl0;
+(pointer * 2)[1] = spl1;
+dry0 = spl0;
+dry1 = spl1;
+
+// retrieve the sample to play
+s0 = (2 * (half_buf - pointer))[0];
+  s1 = (2 * (half_buf - pointer))[1];
+
+// smooth endpoints
+smooth_endpoints ? (
+  r1 = pointer;                        // near the beginning of the buffer
+  r2 = half_buf - pointer;             // near the end of the buffer
+  r = min(r1,r2);
+  r <= smooth_samples ? (
+    gain_adj = (1 - exp(-r*smooth_ratio))/(1 - exp(-(smooth_samples^2)/(10^smoothexp)));
+    // gain_adj = (1 - exp(-r*smooth_ratio))/(1 - exp(-(slider10^2)/(10^slider11)));
+    s0 = s0 * gain_adj;
+    s1 = s1 * gain_adj;
+    );
+);
+
+// output
+spl0 = gain*(s0*wet + dry0*dry);
+spl1 = gain*(s1*wet + dry1*dry);
+
+// move the pointer for next sample
+(pointer += 1) >= half_buf ? pointer = 0;

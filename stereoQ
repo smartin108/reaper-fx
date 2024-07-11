@@ -1,0 +1,6 @@
+local MASTER = reaper.GetMasterTrack(0)
+local chanmode = reaper.GeMediaItemTakeInfo_Value(MASTER, 'I_CHANMODE') = 0
+local newmode = 0
+if chanmode == 0 then newmode = 1 end
+reaper.SetMediaItemTakeInfo_Value(MASTER, 'I_CHANMODE', newmode)
+

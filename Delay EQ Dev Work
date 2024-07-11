@@ -1,0 +1,44 @@
+desc:Rudimentary Delay EQ (smartin)
+//tags: average rms smooth modulation
+//author: smartin
+//modified: 2024-03-24
+//hey it makes a phaser sound and works neat with an LFO
+//sweeping the frequency
+slider3:my_band=1000<20,20000,1:log!>Band center (Hz)
+slider4:band_gain=0<-48,12,0.1>Feedback gain (dB)
+
+in_pin:source input
+in_pin:source input
+out_pin:fx output
+out_pin:fx output
+
+@init
+buf_size = srate * 2;
+freembuf(buf_size);
+mem_ptr = 0;
+enable = 0;
+samples_offset = srate / my_band;   
+
+@slider
+samples_offset = srate / my_band;
+f_gain = 10^(band_gain/20);
+
+@sample
+(mem_ptr * 2)[0] = spl0;
+(mem_ptr * 2)[1] = spl1;
+enable = 1 ? (
+  mem_off = mem_ptr - samples_offset;
+  lf = ((mem_off < 0 ? 1 : 0) * buf_size + mem_off * 2)[0];
+  rf = ((mem_off < 0 ? 1 : 0) * buf_size + mem_off * 2)[1];
+  );
+
+mem_ptr += 1;
+mem_ptr >= samples_offset ? enable = 1; // enable is latched
+mem_ptr >= buf_size / 2 ? mem_ptr = 0;
+
+//s0 = (spl0 + lf * f_gain) / 2; 
+//s1 = (spl1 + rf * f_gain) / 2;
+cut = sign(f_gain - 1);
+spl0 = spl0 + lf * f_gain * cut;
+spl1 = spl1 + rf * f_gain * cut;
+
