@@ -1,0 +1,86 @@
+desc:JBMON: BLUR
+//tags: JBMON
+//author: smartin
+//revised: 20240729
+
+// Quickly switch between up to 16 stereo programs
+
+// Build slider1 to suit (and look for one more place where you need to do this):
+slider1:program=0<1,5,1{A,B,C,D,E,F>Program
+
+// leave this alone:
+in_pin:RESERVED
+in_pin:RESERVED
+in_pin:Program A (L)
+in_pin:Program A (R)
+in_pin:Program B (L)
+in_pin:Program B (R)
+in_pin:Program C (L)
+in_pin:Program C (R)
+in_pin:Program D (L)
+in_pin:Program D (R)
+in_pin:Program E (L)
+in_pin:Program E (R)
+in_pin:Program F (L)
+in_pin:Program F (R)
+in_pin:Program G (L)
+in_pin:Program G (R)
+in_pin:Program H (L)
+in_pin:Program H (R)
+in_pin:Program I (L)
+in_pin:Program I (R)
+in_pin:Program J (L)
+in_pin:Program J (R)
+in_pin:Program K (L)
+in_pin:Program K (R)
+in_pin:Program L (L)
+in_pin:Program L (R)
+in_pin:Program M (L)
+in_pin:Program M (R)
+in_pin:Program N (L)
+in_pin:Program N (R)
+in_pin:Program O (L)
+in_pin:Program O (R)
+in_pin:Program P (L)
+in_pin:Program P (R)
+in_pin:MAX 32 Stereo Pairs
+out_pin:Mix (L)
+out_pin:Mix (R)
+
+@init
+// nothing here
+
+@slider
+// build to suit
+// program shall always start at zero and be sequential [https://www.reaper.fm/sdk/js/js.php]
+// index should point to the alpha character index (A=1)
+// Don't worry about going over... the UI is goverened by <slider1> (^ up there)
+program==0    ? index=1 : 
+program==1    ? index=2 :
+program==2    ? index=3 :
+program==3    ? index=4 :
+program==4    ? index=5 :
+program==5    ? index=6 :
+program==6    ? index=7 :
+program==7    ? index=8 :
+program==8    ? index=9 :
+program==9    ? index=10 :
+program==10   ? index=11 :
+program==11   ? index=12 :
+program==12   ? index=13 :
+program==13   ? index=14 :
+program==14   ? index=15 :
+program==15   ? index=16
+;
+ 
+@block
+// nothing here
+
+@sample
+// leave this alone
+channel_offset = index*2;
+out0 = spl(channel_offset);
+out1 = spl(channel_offset + 1); 
+spl0=out0;
+spl1=out1;
+
