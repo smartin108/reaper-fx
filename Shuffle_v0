@@ -1,4 +1,7 @@
-desc:Used with Jukebox, can randomly shuffle between programs
+desc:ProjectTerror (smartin)
+//tags: secret random
+//author: smartin
+
 
 slider1:gain_db=0<-150,12,1>gain (dB)
 
@@ -13,18 +16,43 @@ out_pin:through
 out_pin:through
 
 @init
-mood_exp = 2-mood_s;
-mood = 2^mood_exp;
-mu = interval;
-rand(x)>0.2 ? (
-  delta = 0
+// globals
+global_timer_root = time();
+total_elapsed_time = 0;
+block_start_time = global_timer_root;
+timer_0_start = global_timer_root;
+timer_0_init = 1;
+timer_0 = 0;
+
+
+function updateTimer1(asof)
+// send me the time you want me to evaluate this as of
+// 
+(
+  (
+    asof == 0;
   ) ? (
-  delta = 1
+    asof = time();
   );
+  //asof - timer_0_start >= timer_0 && timer_0_init ? 
+  
+);
 
 
-//rand(x) -- returns a psuedorandom number between 0 and the parameter.
+function random0(scale)
+(
+  //rand(x) -- returns a psuedorandom number between 0 and the parameter.
+  //https://www.reaper.fm/sdk/js/basiccode.php#js_basicfunc
+  // random0 is just a member of the uniform distribution from 0 to [scale]
+  rand(scale);
+  // pretty uninteresting, right?
+);
 
+
+//
+mood_exp = 2 - mood_s;
+mood = 2^mood_exp;
+//mu = interval;
 
 @slider
 mood_exp = 2-mood_s;
@@ -32,19 +60,11 @@ mood = 2^mood_exp;
 
 
 @block
+block_start_time=time();
+total_elapsed_time=block_start_time-global_timer_root;
+
+
 d_gain = (next_gain - last_gain)/samplesblock;
 
 @sample
-spl0 *= last_gain;
-spl1 *= last_gain;
-last_gain += d_gain;
 
-
-
-/*
-time([v]) -- REAPER 4.60+
-Returns the current time as seconds since January 1, 1970. 1 second granularity. If a parameter is specified, it will be set to the timestamp.
-
-time_precise([v]) -- REAPER 4.60+
-Returns a system-specific timestamp in seconds. Granularity is system-defined, but generally much less than 1 millisecond. Useful for benchmarking. If a parameter is specified, it will be set to the timestamp.
-*/
