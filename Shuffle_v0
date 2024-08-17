@@ -3,11 +3,12 @@ desc:ProjectTerror (smartin)
 //author: smartin
 
 
-slider1:gain_db=0<-150,12,1>gain (dB)
+//slider1:gain_db=0<-150,12,1>gain (dB)
 
 slider2:interval=240<10,600,10>average shuffle interval (s)
-slider3:mood_s=2<0,4,1{slow,chill,normal,hyper,frenetic}>hype level?
-slider4:delta=0.2<0,1,0.001>P(delta)
+slider3:mood_s=2<-2,2,1{slow,chill,normal,hyper,frenetic}>mood
+//slider4:delta=0.2<0,1,0.001>P(delta)
+slider8:rms_window=500<10,1000,1>rms window
 
 
 in_pin:left input
@@ -20,23 +21,9 @@ out_pin:through
 global_timer_root = time();
 total_elapsed_time = 0;
 block_start_time = global_timer_root;
-timer_0_start = global_timer_root;
-timer_0_init = 1;
-timer_0 = 0;
-
-
-function updateTimer1(asof)
-// send me the time you want me to evaluate this as of
-// 
-(
-  (
-    asof == 0;
-  ) ? (
-    asof = time();
-  );
-  //asof - timer_0_start >= timer_0 && timer_0_init ? 
-  
-);
+timer = 0;
+window_samples = rms_window * srate / 1000;
+rms=100; // merely a memory offset
 
 
 function random0(scale)
@@ -49,10 +36,62 @@ function random0(scale)
 );
 
 
-//
+/*  timer memory access map:
+      timer[0] : timer start time absolute
+      timer[1] : timer end time absolute
+      timer[2] : timer remaining duration
+    you can probably extend this such that 'timer1' = 10, so timer1[0] = timer[10] = timer1 start time absolute, and so on.
+*/
+
+function set_timer(timerid, duration)
+(
+  timermx = 10 * timerid;
+  timermx[0] = time();
+  timermx[1] = timer[0] + duration;
+  timermx[2] = duration;
+);
+
+
+function timer_reset(timerid)
+(
+  base_duration = interval * 2^mood_exp;
+  set_timer(timerid, random0(base_duration));
+);
+
+
+function update_timer(timerid)
+// decrement the timer
+// trigger alarm as needed
+(
+  timermx = 10 * timerid;
+  now = time();
+  timermx[2] = timermx[1] - now;
+  total_elapsed_time = now - global_timer_root;
+ (
+    timermx[2] < 0
+  ) ? (
+    timer_reset(timerid);
+  )
+);
+
+
+function update_rms_registers(tracks, stereo)
+(
+  i = 0;
+  while (i <= tracks)
+    (
+      ptr_rms = i * (stereo + 1);
+      rms[ptr_rms] = spl(0) * spl;
+    );
+    
+);
+
+
+// slider values
 mood_exp = 2 - mood_s;
 mood = 2^mood_exp;
-//mu = interval;
+timer_reset(0);
+
 
 @slider
 mood_exp = 2-mood_s;
@@ -60,11 +99,15 @@ mood = 2^mood_exp;
 
 
 @block
-block_start_time=time();
-total_elapsed_time=block_start_time-global_timer_root;
+//block_start_time=time();
+//total_elapsed_time=block_start_time-global_timer_root;
+timer0_start = timer[0];
+timer1_end = timer[1];
+timer2_remaining = timer[2];
+update_timer();
 
 
 d_gain = (next_gain - last_gain)/samplesblock;
 
 @sample
-
+//update_rms_registers(8,1); //death bug in that fn!
