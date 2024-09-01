@@ -1,0 +1,16 @@
+desc:(smartin) 1-pole lpf ~ thx Dan Worral!
+//tags: filter
+//author: Dan Worral https://www.youtube.com/watch?v=OE_R3LBJo0I
+
+slider1:40<1,1000,0.1:log=33>Frequency
+
+@slider
+HPF_coeff = sqrt(slider1 * ( (2*$pi) / srate ));
+
+@sample
+lpf_left  = lpf_left  + (spl0 - lpf_left)  * HPF_coeff;
+lpf_right = lpf_right + (spl1 - lpf_right) * HPF_coeff;
+
+spl0 = spl0 - lpf_left;
+spl1 = spl1 - lpf_right;
+
