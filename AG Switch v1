@@ -20,7 +20,7 @@ Output:
 
 */
 
-slider1:0<0,16,1{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P>Program
+slider1:0<0,4,1{A,B,C,D,E>Program
 
 in_pin:RESERVED
 in_pin:RESERVED
