@@ -6,7 +6,7 @@ desc: Volume Adjustment
 //author: Cockos
 //hacker: AH
 
-slider1:0<-24,18,1>Adjustment (dB)
+slider1:0<-24,60,1>Adjustment (dB)
 slider2:0<-24,12,1>Max Volume (dB)
 
 in_pin:left input
