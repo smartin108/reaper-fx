@@ -1,0 +1,71 @@
+desc:RMS meter with variable duration (smartin)
+//tags: RMS meter
+//author: smartin
+
+
+//  USAGE
+//  
+//  rms_window (ms) : the length of time over which to measure signal RMS
+//  frame_rate : the number of updates per second to report
+//
+//  The measurement is made over a sliding window of duration <rms window> 
+//  and reported out <frame rate> times per second
+
+
+slider1:rms_window=500<10,3000,10>RMS window (ms)
+slider2:frame_rate=20<1,50,1>frame rate (fps)
+slider3:rms=<-180,0,1>RMS (calculated)
+
+in_pin:left input
+in_pin:right input
+out_pin:left output
+out_pin:right output
+
+@init
+agg = 0x1000;                // base memory location for aggregating frames
+universal_counter = 0;
+reporting_frame = 0;
+last_reporting_frame = -1;
+
+
+function rms_calc(frame)(
+  levdB = 20 * log10(sqrt(agg[frame]/mini_counter));
+  floor(levdB * 10 ) / 10;
+);
+
+function reset_agg(frame)(
+  frame ? (
+    agg[reporting_frame - 1] = 0;
+  ) ? (
+    agg[frame_count - 1] = 0;
+  );
+);
+
+
+@slider
+//samples_per_window = srate * rms_window * 0.001;
+samples_per_frame = srate / frame_rate;
+frame_count = rms_window * 0.001 * frame_rate;
+
+
+@block
+
+
+@sample
+frame = 0;
+while (frame < frame_count) (
+  partial = 0.5 * (spl0 * spl0 + spl1 * spl1);
+  agg[frame] += partial;
+  frame += 1;
+);
+
+reporting_frame = (universal_counter / samples_per_frame) % frame_count;
+reporting_frame != last_reporting_frame ? (
+  reset_agg(reporting_frame);
+  last_reporting_frame = reporting_frame;
+  mini_counter = 0;
+);
+rms = rms_calc(reporting_frame);
+
+mini_counter += 1;
+universal_counter += 1;
