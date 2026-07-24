@@ -38,10 +38,10 @@ SRATE_INV = 1/srate;
 headroom = 12;              // y-axis headroom target (dB)
 //min_y = -90;                // minimum dB to "zoom" to
 threshold = -90;             // if signal drops below this level, freeze zoom
-u_dwell_pre_rise = 100;     // dwell time to wait before reacting to rising rms (ms)
+u_dwell_pre_rise = 250;     // dwell time to wait before reacting to rising rms (ms)
 u_dwell_pre_fall = 750;     // dwell time to wait before reacting to falling rms (ms)
-u_rise_rate = 12;           // reaction rate to rising rms (dB/s)
-u_fall_rate = 12;           // reaction rate to falling rms (dB/s)
+u_rise_rate = 24;           // reaction rate to rising rms (dB/s)
+u_fall_rate = 24;           // reaction rate to falling rms (dB/s)
 
 dwell_pre_rise = srate * u_dwell_pre_rise * 0.001;  // (samples)
 dwell_pre_fall = srate * u_dwell_pre_fall * 0.001;  // (samples)
